@@ -35,35 +35,14 @@ SOFTWARE.
 //*******************************************************************//
 
 // THREEJS //
-var camera, scene, renderer, controls;
-var webcamMaterial;
-var webcamTexture;
-var webcamParams;
-var sphere_Array = [];
-var objPositions = []
-var particlesTotal = 512;
-var amount;
-var separation;
-var offset;
-var current = 0;
-var fovAlgorithm;
-var sphere_Geom;
-var sphere_Mat;
-var sphere_Mesh;
-var sphereMap_Mat;
-var sphereMap_Geom;
-var sphereMap_Mesh;
-
-
-
-// WEBCAM //
-var webcamSrc;
-var navigator;
-var webcamContraints = { video:true, audio:false };
+var container;
+var camera, scene, renderer;
+var jsonLoader;
+var meshPlane;
+var controls;
 
 
 // MODERNIZR // 
-var supports_GetUserMedia;
 var supports_WebGL;
 
 
@@ -81,7 +60,9 @@ WAGNER.fragmentShadersPath = 'scripts/js/_lib/wagner/fragment-shaders';
 
 function init()
 {
-	webcamSrc = document.getElementById( "webcam" );
+
+	container = document.createElement( "div" );
+	container.id = "webgl";
 
 	modernizr_checkFeatures();
 }
@@ -92,17 +73,10 @@ function init()
 
 function modernizr_checkFeatures()
 {
-	Modernizr.on('getusermedia', function( result )
-    {
-        supports_GetUserMedia = (result) ? true : false;
-        
-    });
-
     Modernizr.on('webgl', function( result )
     {
         supports_WebGL = (result) ? true : false;
     });
-
 
     checkStatus_Features();
 }
@@ -113,9 +87,9 @@ function modernizr_checkFeatures()
 
 function checkStatus_Features ()
 {
-	if(  supports_GetUserMedia != undefined && supports_WebGL != undefined )
+	if( supports_WebGL != undefined )
 	{
-	 	init_Webcam();
+	 	initWorld_ThreeJS();
 
 	} else {
 		
@@ -127,95 +101,6 @@ function checkStatus_Features ()
 
 }
 
-
-
-
-
-function init_Webcam()
-{
-	webcamSrc = document.getElementById( "webcam" );
-
-	navigator.getUserMedia = navigator.getUserMedia ||
-	                         navigator.webkitGetUserMedia ||
-	                         navigator.mozGetUserMedia;
-
-	navigator.getUserMedia ( webcamContraints, streamConnect_Success, streamConnect_Failure ).then( loadWebcam_Success ).catch( loadWebcam_Failure );
-
-}
-
-
-
-
-
-function streamConnect_Success( stream )
-{
-	webcamSrc.src = window.URL.createObjectURL(stream);
-
-    webcamSrc.onloadedmetadata = function( e )
-    {
-    	webcamSrc.play();
-    };
-
-	initWorld_ThreeJS();
-	threeJS_Render();
-
-}
-
-
-function streamConnect_Failure( err )
-{
-	console.log("The following error occurred: " + err.name);
-
-}
-
-
-
-
-
-function loadWebcam_Success()
-{
-	console.log( "loadWebcam_Success();" );
-
-	var videoTracks = stream.getVideoTracks();
-
-	stream.onended = function()
-	{
-		console.log('Stream ended');
-	};
-
-	console.log( stream );
-	window.stream = stream; // make variable available to browser console
-	webcamSrc.srcObject = stream;
-
-	initWorld_ThreeJS();
-
-}
-
-
-function loadWebcam_Failure()
-{
-	if (error.name === 'ConstraintNotSatisfiedError')
-	{
-		errorMsg('The resolution ' + constraints.video.width.exact + 'x' + constraints.video.width.exact + ' px is not supported by your device.');
-
-	} else if (error.name === 'PermissionDeniedError')
-	{
-		errorMsg('Permissions have not been granted to use your camera and ' + 'microphone, you need to allow the page access to your devices in ' + 'order for the demo to work.');
-	}
-
-	errorMsg('getUserMedia error: ' + error.name, error);
-}
-
-
-function errorMsg(msg, error)
-{
-	document.getElementById( "error-element" ).innerHTML += '<p>' + msg + '</p>';
-
-	if (typeof error !== 'undefined') {
-		console.error(error);
-	}
-
-}
 
 
 
@@ -241,7 +126,8 @@ function initWorld_ThreeJS()
 
 
 	// Renderer
-	renderer = new THREE.WebGLRenderer({ alpha: true });
+	 renderer = new THREE.WebGLRenderer( { width:  window.innerWidth, height:  window.innerHeight, scale:1, antialias: true });
+	//renderer = new THREE.WebGLRenderer({ alpha: true });
 	renderer.setPixelRatio( window.devicePixelRatio );
 	renderer.setSize( window.innerWidth, window.innerHeight );
 	document.getElementById("threejs-container").appendChild( renderer.domElement );
@@ -255,119 +141,22 @@ function initWorld_ThreeJS()
 
 
 	// Lights
-	scene.add( new THREE.AmbientLight( 0xffffff ) );
-	// Add orbital lights
-
-
-	// Webcam Texture / Material
-	webcamTexture = new THREE.VideoTexture( webcamSrc );
-	webcamTexture.minFilter = THREE.LinearFilter;
-	webcamTexture.magFilter = THREE.LinearFilter;
-	webcamTexture.format = THREE.RGBFormat;
-
-	webcamParams = { map: webcamTexture };
-	webcamMaterial = new THREE.MeshLambertMaterial( webcamParams );
+	// Ambient Light
+	scene.add( new THREE.AmbientLight( 0xff0099 ) );
 	
+	// Point Light
+	pointLight = new THREE.PointLight( 0x00CCFF, 6, 30 );
+	scene.add( pointLight );
+	
+	// Point Light representation
+	sphere = new THREE.SphereGeometry( 1, 16, 6);
+	lightMesh = new THREE.Mesh( sphere, new THREE.MeshBasicMaterial( { color: 0x71E3FF, wireframe:true } ) );
+	scene.add( lightMesh );
 
-	// Sphere Map
-	sphereMap_Geom  = new THREE.SphereGeometry(150, 128, 128)
-	sphereMap_Mat  = new THREE.MeshBasicMaterial({color: 0x000, wireframe: true, opacity:0.5})
-	sphereMap_Mat.side  = THREE.BackSide;
-	sphereMap_Mat.transparent = true;
-
-	sphereMap_Mesh  = new THREE.Mesh(sphereMap_Geom, sphereMap_Mat)
-	sphereMap_Mesh.matrixAutoUpdate = false;
-	sphereMap_Mesh.updateMatrix();
-	scene.add(sphereMap_Mesh);
-
-
-	// Add Spheres
-	for ( var i = 0; i < particlesTotal; i ++ )
-	{
-		sphere_Geom  = new THREE.SphereGeometry(1.5, 16, 16);	
-		sphere_Mat  = new THREE.MeshBasicMaterial({ color: 0x000000, vertexColors: THREE.FaceColors });
-		sphere_Mesh  = new THREE.Mesh(sphere_Geom, webcamMaterial)
-
-		sphere_Array.push( sphere_Mesh );
-
-		scene.add(sphere_Mesh);
-	}
-
+	loadJSONMesh();
 
 	window.addEventListener( 'resize', onWindowResize, false );
-	loadObjectGeomsPos();
-}
-
-
-
-
-
-
-
-function loadObjectGeomsPos()
-{
-	// Cube
-	var amount = 8;
-	var separation = 6;
-	var offset = ( ( amount - 1 ) * separation ) / 2;
-
-	for ( var i = 0; i < particlesTotal; i ++ ) {
-
-		var x = ( i % amount ) * separation;
-		var y = Math.floor( ( i / amount ) % amount ) * separation;
-		var z = Math.floor( i / ( amount * amount ) ) * separation;
-
-		objPositions.push( x - offset, y - offset, z - offset );
-
-	}
-
-	// Cone
-	var radius = 20;
-
-	for ( var i = 0; i < particlesTotal; i ++ ) {
-
-		var phi = Math.acos( -1 + ( 2 * i ) / particlesTotal );
-		var theta = Math.sqrt( particlesTotal * Math.PI ) * phi;
-
-		objPositions.push(
-			radius * Math.cos( theta ) * Math.sin( phi ),
-			radius * Math.sin( theta ) * Math.sin( phi ),
-			radius * Math.cos( phi * 2)
-			)
-	}
-
-
-
-	// Sphere
-	var radius2 = 25;
-
-	for ( var i = 0; i < particlesTotal; i ++ ) {
-
-		var phi2 = Math.acos( -1 + ( 2 * i ) / particlesTotal );
-		var theta2 = Math.sqrt( particlesTotal * Math.PI ) * phi2;
-
-		objPositions.push(
-			radius2 * Math.cos( theta2 ) * Math.sin( phi2 ),
-			radius2 * Math.sin( theta2 ) * Math.sin( phi2 ),
-			radius2 * Math.cos( phi2 )
-		);
-
-	}
-	
-	
-	// Random
-	for ( var i = 0; i < particlesTotal; i ++ ) {
-
-		objPositions.push(
-			Math.random() * 200 - 100,
-			Math.random() * 200 - 100,
-			Math.random() * 200 - 100
-		);
-
-	}
-	
-
-	setTimeout( tweenToPos, 1000 );
+	threeJS_Animate();
 
 }
 
@@ -375,33 +164,36 @@ function loadObjectGeomsPos()
 
 
 
-function tweenToPos()
+function loadJSONMesh()
 {
-	var offset = current * particlesTotal * 3;
-	var duration = 2000;
+	jsonLoader = new THREE.JSONLoader();
+	
+	jsonLoader.load("./site-assets/plane.json", function ( geometry )
+	{
+		/*
+		var Mat = new THREE.MeshPhongMaterial({color: 0x6eb5df,  shininess: 100,vertexColors: THREE.FaceColors})
+		
+		meshPlane = new THREE.Mesh( geometry, Mat );
+		*/
 
-	for ( var i = 0, j = offset; i < particlesTotal; i ++, j += 3 ) {
+		meshPlane = THREE.SceneUtils.createMultiMaterialObject( geometry, [
+        	new THREE.MeshPhongMaterial({ color: 0xffffff, wireframe: true,vertexColors: THREE.FaceColors, transparent : true, opacity : 1, shininess: 1000}),
+        	new THREE.MeshPhongMaterial({color: 0x6eb5df,  shininess: 1000,vertexColors: THREE.FaceColors})
+		]);
 
-		var object = sphere_Array[ i ];
+		meshPlane.rotation.y = Math.PI / 2;
+		
+		meshPlane.scale.set( 20, 20, 20 );
+		meshPlane.position.set( -0.2, 0.15, 0 );
 
-		new TWEEN.Tween( object.position )
-			.to( {
-				x: objPositions[ j ],
-				y: objPositions[ j + 1 ],
-				z: objPositions[ j + 2 ]
-			}, Math.random() * duration + duration )
-			.easing( TWEEN.Easing.Exponential.InOut )
-			.start();
+		// meshPlane.children[ 1 ].scale.multiplyScalar( 1.01 );
+		scene.add( meshPlane );
 
-	}
-
-	new TWEEN.Tween( this )
-		.to( {}, duration * 5 )
-		.onComplete( tweenToPos )
-		.start();
-
-	current = ( current + 1 ) % 4;
-
+		/*
+		wireframe = new THREE.WireframeHelper( meshPlane, 0x333333 );
+		threeJS_Scene.add(wireframe);
+		*/
+	});
 }
 
 
@@ -417,30 +209,27 @@ function threeJS_Animate(time) {
 
 
 
-
+var r;
 
 function threeJS_Render()
 {
+	//requestAnimationFrame( threeJS_Render );
 
-	requestAnimationFrame( threeJS_Render );
+	//controls.update();
 
-	TWEEN.update();
-	controls.update();
+
+
+	r = Date.now() * 0.001;
+	pointLight.position.x = 10 * Math.cos( r );
+	pointLight.position.y = 10 * Math.cos( r * 1.65 );
+	pointLight.position.z = 10 * Math.sin( r );
 	
-	var time = performance.now();
-	for ( var i = 0, l = sphere_Array.length; i < l; ++i  )
-	{
-		var object = sphere_Array[ i ];
-		var scale = Math.sin( ( Math.floor( i / 0.5 ) + time ) * 0.002 ) * 0.4 + 1;
-		
-		object.scale.set( scale, scale, scale );
+	lightMesh.position.copy( pointLight.position );
 
-		/*
-		var rotationY = object.rotation.y +=0.01;
-		object.rotation.set( 0, rotationY, 0 );
-		*/
-	}
-
+	/*
+	meshPlane.children[0].geometry.verticesNeedUpdate = true 
+    meshPlane.children[0].geometry.computeFaceNormals();
+	*/
 
 	camera.lookAt( scene.position );
 	
@@ -457,4 +246,5 @@ function onWindowResize()
 	camera.aspect = window.innerWidth / window.innerHeight;
 	camera.updateProjectionMatrix();
 	renderer.setSize( window.innerWidth, window.innerHeight );
+
 }
