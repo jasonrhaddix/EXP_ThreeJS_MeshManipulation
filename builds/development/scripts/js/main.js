@@ -46,7 +46,7 @@ var meshVertices = [];
 
 // MODERNIZR // 
 var supports_WebGL;
-var minVertexHeight = 0.000001;
+var minVertexHeight =   0.000001;
 
      var moonGlow;
     var mesh;
@@ -207,6 +207,17 @@ function initWorld_ThreeJS()
 	controls.enableZoom = false;
 
 
+  sphereMap_Geom  = new THREE.SphereGeometry(200, 128, 128)
+  sphereMap_Mat  = new THREE.MeshBasicMaterial({color: 0x333333, wireframe: true, opacity:0.2})
+  sphereMap_Mat.side  = THREE.BackSide;
+  sphereMap_Mat.transparent = true;
+
+  sphereMap_Mesh  = new THREE.Mesh(sphereMap_Geom, sphereMap_Mat)
+  sphereMap_Mesh.matrixAutoUpdate = false;
+  sphereMap_Mesh.updateMatrix();
+  scene.add(sphereMap_Mesh);
+
+
 	// Lights
 	var directionalLight = new THREE.DirectionalLight( 0x4ea5bf, 0.85 );
     directionalLight.position.set( 1, 1, 0 );
@@ -249,7 +260,8 @@ function initWorld_ThreeJS()
 
 
 	loadJSONMesh();
-	window.addEventListener( 'resize', onWindowResize, false );
+	//createMesh();
+    window.addEventListener( 'resize', onWindowResize, false );
 	
 
 	
@@ -274,7 +286,7 @@ function loadJSONMesh()
 
 		meshPlane = THREE.SceneUtils.createMultiMaterialObject( geometry, [
         	new THREE.MeshLambertMaterial({ color : 0xFF0099, vertexColors : THREE.FaceColors, wireframe : true, transparent : true, opacity : 1 }),
-        	new THREE.MeshLambertMaterial({ color : 0x71134b, vertexColors : THREE.FaceColors })
+        	new THREE.MeshLambertMaterial({ color : 0x71134b, vertexColors : THREE.FaceColors/*, wireframe : true*/ })
 		]);
 
 		meshPlane.rotation.y = Math.PI / 2;
@@ -369,8 +381,8 @@ function loadJSONMesh()
         	canColorMesh = true;
 	    	//glitch();
      	
-     		//checkVertices();
-        	initHeight();
+     		checkVertices();
+        	//initHeight();
 
         }});
 		
@@ -380,6 +392,74 @@ function loadJSONMesh()
 
 	});
 }
+
+
+
+
+
+
+
+
+
+
+function createMesh()
+{
+
+  var custom_geom = new THREE.Geometry();
+  custom_geom.vertices.push(
+    new THREE.Vector3( -10,  10, 0 ),
+    new THREE.Vector3( -10, -10, 0 ),
+    new THREE.Vector3(  10, -10, 0 )
+  );
+
+    amount = 3; 
+    var num = 1000;
+    
+    for(var i = 0; i < num; ++i)
+    {
+        var x = THREE.Math.randFloat( -10, 10 );
+        var y = THREE.Math.randFloat( -10, 10 );
+        var z = THREE.Math.randFloat( -10, 10 );
+        custom_geom.vertices.push( new THREE.Vector3( x,  y, z ) );
+
+
+     /*
+    var mod = i % 3;
+    console.log( mod );
+    */
+
+        var x = ( i % amount )/* * separation*/;
+        var y = Math.floor( ( i / amount ) % amount )/* * separation*/;
+        var z = Math.floor( i / ( amount * amount ) )/* * separation*/;
+        custom_geom.faces.push( new THREE.Face3( x, y, z ) );
+
+        console.log( x, y, z);
+  }
+
+  //custom_geom.faces.push( new THREE.Face3( 3, 4, 5 ) );
+
+  custom_geom.computeBoundingSphere();
+  meshPlane = THREE.SceneUtils.createMultiMaterialObject( custom_geom, [
+          new THREE.MeshLambertMaterial({ color : 0xFF0099, vertexColors : THREE.FaceColors, wireframe : true, transparent : true, opacity : 1 }),
+          new THREE.MeshLambertMaterial({ color : 0x71134b, vertexColors : THREE.FaceColors, wireframe : true })
+    ]);
+
+    //meshPlane.rotation.y = Math.PI / 2;
+    
+    meshPlane.scale.set( 2, 2, 2 );
+    meshPlane.position.set( 0, 0, 0 );
+
+    custom_geom.computeFaceNormals();
+    custom_geom.computeVertexNormals();
+
+    scene.add( meshPlane );
+
+    threeJS_Animate();
+
+}
+
+
+
 
 
 
