@@ -96,11 +96,11 @@ var minVertexHeight =   0.000001;
 
     var effect;
 
-    var scaleValue = {
+    /*var scaleValue = {
         val : 150,
         glitch : 0,
         ratio : 0
-    };
+    };*/
    
     var cameraPosZ = 5000;
 
