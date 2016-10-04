@@ -40,7 +40,7 @@ var camera, scene, renderer;
 var jsonLoader;
 var meshPlane;
 var controls;
-var motionRate, motionRate2;
+//var motionRate, motionRate2;
 
 var meshVertices = [];
 
@@ -48,7 +48,7 @@ var meshVertices = [];
 var supports_WebGL;
 var minVertexHeight =   0.000001;
 
-     var moonGlow;
+    var moonGlow;
     var mesh;
     var mouseX;
     var mouseY;
@@ -178,9 +178,9 @@ function initWorld_ThreeJS()
 	// Camera
 	camera = new THREE.PerspectiveCamera( 40, window.innerWidth / window.innerHeight, 1, 1000 );
 	
-	camera.position.x = 0;
-	camera.position.y = 5;
-	camera.position.z = -150;
+	camera.position.x = 0.1;
+	camera.position.y = 0;
+	camera.position.z = -180;
 
 	fovAlgorithm = 2 * Math.atan( ( (window.innerWidth) / camera.aspect ) / ( 2 * 1175 ) ) * ( 180 / Math.PI );
 
@@ -207,43 +207,49 @@ function initWorld_ThreeJS()
 	controls.enableZoom = false;
 
 
-  sphereMap_Geom  = new THREE.SphereGeometry(200, 128, 128)
-  sphereMap_Mat  = new THREE.MeshBasicMaterial({color: 0x333333, wireframe: true, opacity:0.2})
-  sphereMap_Mat.side  = THREE.BackSide;
-  sphereMap_Mat.transparent = true;
+    sphereMap_Geom  = new THREE.SphereGeometry( 600, 128, 128 );
+    sphereMap_Mat  = new THREE.MeshBasicMaterial( { color: 0x333333, wireframe: true, opacity:0.1 } );
+    sphereMap_Mat.side  = THREE.BackSide;
+    sphereMap_Mat.transparent = true;
 
-  sphereMap_Mesh  = new THREE.Mesh(sphereMap_Geom, sphereMap_Mat)
-  sphereMap_Mesh.matrixAutoUpdate = false;
-  sphereMap_Mesh.updateMatrix();
-  scene.add(sphereMap_Mesh);
+    sphereMap_Mesh  = new THREE.Mesh(sphereMap_Geom, sphereMap_Mat)
+    sphereMap_Mesh.matrixAutoUpdate = false;
+    sphereMap_Mesh.updateMatrix();
+    scene.add(sphereMap_Mesh);
 
 
 	// Lights
-	var directionalLight = new THREE.DirectionalLight( 0x4ea5bf, 0.85 );
-    directionalLight.position.set( 1, 1, 0 );
-
+    directionalLight = new THREE.DirectionalLight( 0xFFFFFF, 0.9 );
+    directionalLight.position.set( -10, 10, 1 );
+    directionalLight.target.position.set( 10, 0, 0 );
     scene.add( directionalLight );  
+    
 
 	// Ambient Light
-	//scene.add( new THREE.AmbientLight( 0xFFFFFF ) );
+	//scene.add( new THREE.AmbientLight( 0xFFFFFF, 0.75 ) );
 	
 	// Point Light
-	pointLight = new THREE.PointLight( 0x2ab3d5, 4, 20 );
+	pointLight = new THREE.PointLight( 0x00ffd8, 1.5, 20 );
 	scene.add( pointLight );
 
-	pointLight2 = new THREE.PointLight( 0x2ab3d5, 4, 20 );
+	pointLight2 = new THREE.PointLight( 0x00ffd8, 1.5, 20 );
 	scene.add( pointLight2 );
 
-	pointLight3 = new THREE.PointLight( 0x2ab3d5, 2, 20 );
+	pointLight3 = new THREE.PointLight( 0x00ffd8, 1.5, 20 );
 	scene.add( pointLight3 );
 
-	pointLight4 = new THREE.PointLight( 0x3d1371, 1.5, 45 );
-	// pointLight4.position.set(30, 15, 0);
-	scene.add( pointLight4 );
+    pointLight5 = new THREE.PointLight( 0xd30041, 1.5, 30 );
+    pointLight5.position.set(55, 7, 0);
+    scene.add( pointLight5 );
 
-	pointLight5 = new THREE.PointLight( 0x3d1371, 1.5, 45 );
-	// pointLight5.position.set(-30, 10, 0);
-	scene.add( pointLight5 );
+    pointLight4 = new THREE.PointLight( 0xd30041, 1.5, 30 );
+    pointLight4.position.set(15, 8, 0);
+    scene.add( pointLight4 );
+                                        /* 0x3d1371 */
+    pointLight5 = new THREE.PointLight( 0xd30041, 1.5, 30 );
+    pointLight5.position.set(-40, 8, 3);
+    scene.add( pointLight5 );
+
 	
 	// Point Light representation
 	pointLightRep = new THREE.SphereGeometry( 2, 16, 6);
@@ -285,8 +291,8 @@ function loadJSONMesh()
 		*/
 
 		meshPlane = THREE.SceneUtils.createMultiMaterialObject( geometry, [
-        	new THREE.MeshLambertMaterial({ color : 0xFF0099, vertexColors : THREE.FaceColors, wireframe : true, transparent : true, opacity : 1 }),
-        	new THREE.MeshLambertMaterial({ color : 0x71134b, vertexColors : THREE.FaceColors/*, wireframe : true*/ })
+        	new THREE.MeshLambertMaterial({ color : 0x5700b0, vertexColors : THREE.FaceColors, wireframe : true, transparent : true, opacity : 1 }),
+        	new THREE.MeshLambertMaterial({ color : 0x35006b, vertexColors : THREE.FaceColors/*, wireframe : true*/ })
 		]);
 
 		meshPlane.rotation.y = Math.PI / 2;
@@ -306,7 +312,7 @@ function loadJSONMesh()
 
 		geometry.colorNeedUpdate = true;
         
-        faces = meshPlane.children[1].geometry.faces;
+        faces = meshPlane.children[0].geometry.faces;
         lengthFaces = faces.length;
 
 
@@ -314,8 +320,13 @@ function loadJSONMesh()
 
 		var i = 0;
 		var v = 0;
-		while (i < vertices.length )
+ 
+		while ( i < vertices.length )
 		{
+            //console.log( vertices[i].y );
+
+             vertices[i].originalY =  vertices[i].y;
+
 			if( vertices[i].y > minVertexHeight )
 			{	
 				meshVertices[v] = { vertex:vertices[i], originalY:vertices[i].y };
@@ -328,6 +339,8 @@ function loadJSONMesh()
 
 		}
 
+        console.log( meshVertices.length );
+
 
 
 
@@ -335,7 +348,7 @@ function loadJSONMesh()
 		meshLoaded = true;
 
         var k = 0;
-        while(k < nbBands){
+        while( k < nbBands ){
 
             var temp = Math.round(Math.random()*lengthMesh);
 
@@ -358,7 +371,7 @@ function loadJSONMesh()
         meshLoaded = true;
 
         var k = 0;
-        while(k < nbVerticalBands){
+        while( k < nbVerticalBands ){
 
            verticalBandNumber.push(  (Math.round(lengthFaces/lengthMesh * k ))  -1 ) ;
            if(verticalBandNumber[k] < 0){
@@ -375,20 +388,38 @@ function loadJSONMesh()
         
 
 
-
-        TweenMax.to(camera, 1.5, {fov : 90,g :10, b : 10, /*onUpdate:cameraUpdate,*/ ease:Power4.easeInOut, onComplete: function()
+        /*
+        TweenMax.to(camera, 1.5, {fov : 90,g :10, b : 10,  ease:Power4.easeInOut, onComplete: function()
         {
         	canColorMesh = true;
 	    	//glitch();
      	
-     		checkVertices();
-        	//initHeight();
+     		// checkVertices();
+        	initHeight();
 
         }});
-		
+		*/
+        initHeight();
+		definePulse();
+        threeJS_Animate();
 
 
-		threeJS_Animate();
+        /*
+        setTimeout( function()
+        {
+           vertices[1].setY(2);
+           vertices[6].setY(2);
+           vertices[3].setY(2);
+        }, 4000)
+        */
+        
+
+        document.addEventListener( 'mousemove', onDocumentMouseDown, false );
+
+        setTimeout( function()
+        {
+            pulse();
+        }, 5000);
 
 	});
 }
@@ -496,11 +527,211 @@ function checkVertices()
 
 
 
+function initHeight()
+{
+    i = 0;
+    k = 0;
+    vertLength = meshVertices.length;
+    facesLength = Math.round( vertLength * 2.5 );
+
+
+    var tl;
+
+    var tweenArray = [];
+    tl = new TimelineLite( { paused:true } );    
+
+    while ( i < vertLength )
+    {
+        mesh = meshVertices[i];
+        
+        tl.add( new TweenMax.to(mesh.vertex, 0.75, {y : mesh.originalY, ease:Power4.easeOut}), 0.001 * i )
+        
+        ++i;
+
+    }
+
+    while ( k < facesLength )
+    {
+        tl.add(TweenMax.to(faces[k].color, 0.2, {r : 6,g :6, b : 6, ease:Power4.easeOut, onComplete: function(face)
+        {
+            TweenMax.to(face.color, 0.6, {r : 1,g :1, b : 1});
+        }, onCompleteParams:[faces[k]]}), 0.00049 * k);
+
+        ++k;
+    }
+
+    setTimeout( function()
+    {
+        tl.play();
+    }, 400);
+
+
+    TweenMax.to(camera.position, 1.5, { x : 0.02, y : 4, z : -120,  ease:Power4.easeInOut, delay:4, onComplete: function()
+    {
+        console.log( "CAMERA" )
+
+    }});
+  
+}
 
 
 
 
 
+    tll = new TimelineLite( { paused:true } );    
+
+function definePulse()
+{
+    //i = 0;
+    k = 0;
+    glowAmount = 6;
+    //vertLength = meshVertices.length;
+    facesLength = Math.round( vertLength * 4.5 );
+
+    
+    var tweenArray = [];
+
+    while ( k < facesLength )
+    {
+
+        if( glowAmount > 1 ) glowAmount -= 0.00067;
+       
+        tll.add(TweenMax.to(faces[k].color, 0.2, {r : glowAmount,g :glowAmount, b : glowAmount, ease:Power4.easeOut, onComplete: function(face)
+        {
+            TweenMax.to(face.color, 0.6, {r : 1,g :1, b : 1});
+        }, onCompleteParams:[faces[k]]}), 0.0003 * k);
+
+        ++k;
+    }
+
+}
+
+
+
+
+function pulse()
+{
+    tll.play();
+    
+}
+
+
+
+
+
+
+
+
+
+
+function onDocumentMouseDown( event ) {
+
+        event.preventDefault();
+        /*
+        var vector = new THREE.Vector3(
+            ( event.clientX / window.innerWidth ) * 2 - 1,
+          - ( event.clientY / window.innerHeight ) * 2 + 1,
+            0.5
+        );
+        
+        //projector.unprojectVector( vector, camera );
+
+        var ray = new THREE.Raycaster( camera.position, 
+        vector.sub( camera.position ).normalize() );
+
+        var intersects = ray.intersectObjects( meshPlane.children );
+        */
+
+        
+        var mouse = new THREE.Vector2();
+        mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+        mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;  
+       
+        var raycaster = new THREE.Raycaster( camera.position );
+        raycaster.setFromCamera( mouse, camera );
+        var intersects = raycaster.intersectObjects( meshPlane.children );
+
+
+        if ( intersects.length > 0 ) {
+
+            // console.log( "Has intersects" );
+
+            meshPlane.children[0].geometry.colorsNeedUpdate = true
+            meshPlane.children[1].geometry.colorsNeedUpdate = true
+           
+
+            i = 0;
+            while( i < intersects.length )
+            {
+                //console.log( intersects[i] );
+
+                /*
+                var rColor = THREE.Math.randFloat( 1, 10 );
+                var gColor = THREE.Math.randFloat( 1, 10 );
+                var bColor = THREE.Math.randFloat( 1, 10 );
+                */
+
+                TweenMax.fromTo(faces[intersects[i].faceIndex].color, 0.5, {r : 10,g :10, b : 10},{r : 1,g :1, b : 1})  
+                
+                /*
+                TweenMax.fromTo(faces[intersects[i].faceIndex+1].color, 0.5,{r : 6,g :6, b : 6},{r : 1,g :1, b : 1})
+                TweenMax.fromTo(faces[intersects[i].faceIndex-1].color, 0.5, {r : 4,g :4, b : 4},{r : 1,g :1, b : 1})   
+                TweenMax.fromTo(faces[intersects[i].faceIndex-2].color, 0.5, {r : 2,g :2, b : 2},{r : 1,g :1, b : 1})          
+                TweenMax.fromTo(faces[intersects[i].faceIndex+2].color, 0.5, {r : 2,g :2, b : 2},{r : 1,g :1, b : 1}) 
+                */
+
+                if( intersects[i].distance > 30 )
+                {
+                    // intersects[i].point.z += intersects.distance/3;
+
+                    temp = faces[intersects[i].faceIndex]                  
+
+                    tempA = vertices[temp.a]
+                    tempB = vertices[temp.b]
+                    tempC = vertices[temp.c]
+                    
+
+                    TweenMax.to( tempA, 0.3, { y : tempA.y + THREE.Math.randFloat( 0.1, 0.25 ), ease: Expo.easeOut } )
+                    TweenMax.to( tempB, 0.3, { y : tempB.y + THREE.Math.randFloat( 0.1, 0.25 ), ease: Expo.easeOut } )
+                    TweenMax.to( tempC, 0.3, { y : tempC.y + THREE.Math.randFloat( 0.1, 0.25 ), ease: Expo.easeOut } )
+
+                    TweenMax.to( tempA, 0.8, { y : tempA.originalY, delay: 0.3, ease: Elastic.easeOut } )
+                    TweenMax.to( tempB, 0.8, { y : tempB.originalY, delay: 0.3, ease: Elastic.easeOut } )
+                    TweenMax.to( tempC, 0.8, { y : tempC.originalY, delay: 0.3, ease: Elastic.easeOut } )
+
+                   
+                }
+                
+               
+                i++;
+             
+            }      
+
+        }
+
+       
+        mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+        mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;     
+        
+
+        //mouseX = ( event.clientX ) / window.innerWidth;
+        //mouseY = ( event.clientY ) / window.innerHeight;
+
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
 function initHeight()
 {
               i = 0;
@@ -629,13 +860,13 @@ function initHeight()
                   
           }
 
+*/
 
 
 
 
 
-
-
+/*
  function animateColorMesh()
  {
 		//console.log( "animateColorMesh");
@@ -711,6 +942,7 @@ function initHeight()
 
     }
 
+*/
 
 
 
@@ -724,8 +956,7 @@ function initHeight()
 
 
 
-
-
+/*
 function back(){
         isFront = false;
         updateFlag = false;
@@ -753,7 +984,7 @@ function back(){
         updateFlag = false;
 
 
-        										/* cameraX, cameraZ, cameraY */ 
+  
            TweenMax.to(camera.position, 0.8, {x : camera.x, z : camera.z,y :camera.y, ease:Power4.easeOut, onComplete:function(){
                updateFlag = true;
                isFront = true;
@@ -889,7 +1120,7 @@ function verticalColorMesh(){
 
     }
 
-
+*/
 
 
 
@@ -931,15 +1162,15 @@ function verticalColorMesh(){
             i=0
             while(i<intersects.length){
 
-                TweenLite.fromTo(faces[intersects[i].faceIndex].color, 0.5, {r : 10,g :10, b : 10},{r : 1,g :1, b : 1})  
+                TweenMax.fromTo(faces[intersects[i].faceIndex].color, 0.5, {r : 10,g :10, b : 10},{r : 1,g :1, b : 1})  
 
-                TweenLite.fromTo(faces[intersects[i].faceIndex+1].color, 0.5,{r : 8,g :8, b : 8},{r : 1,g :1, b : 1})              
+                TweenMax.fromTo(faces[intersects[i].faceIndex+1].color, 0.5,{r : 8,g :8, b : 8},{r : 1,g :1, b : 1})              
 
-                TweenLite.fromTo(faces[intersects[i].faceIndex-1].color, 0.5, {r : 8,g :8, b : 8},{r : 1,g :1, b : 1})   
+                TweenMax.fromTo(faces[intersects[i].faceIndex-1].color, 0.5, {r : 8,g :8, b : 8},{r : 1,g :1, b : 1})   
 
-                TweenLite.fromTo(faces[intersects[i].faceIndex-2].color, 0.5, {r : 5,g :5, b : 5},{r : 1,g :1, b : 1})          
+                TweenMax.fromTo(faces[intersects[i].faceIndex-2].color, 0.5, {r : 5,g :5, b : 5},{r : 1,g :1, b : 1})          
 
-                TweenLite.fromTo(faces[intersects[i].faceIndex+2].color, 0.5, {r : 5,g :5, b : 5},{r : 1,g :1, b : 1}) 
+                TweenMax.fromTo(faces[intersects[i].faceIndex+2].color, 0.5, {r : 5,g :5, b : 5},{r : 1,g :1, b : 1}) 
 
 
 
@@ -958,13 +1189,13 @@ function verticalColorMesh(){
                     tempC = vertices[temp.c]
                     
 
-                    TweenLite.to(tempA, 0.2, {y : tempA.y+2})
-                    TweenLite.to(tempB, 0.2, {y : tempB.y+2})
-                    TweenLite.to(tempC, 0.2, {y : tempC.y+2})
+                    TweenMax.to(tempA, 0.2, {y : tempA.y+2})
+                    TweenMax.to(tempB, 0.2, {y : tempB.y+2})
+                    TweenMax.to(tempC, 0.2, {y : tempC.y+2})
 
-                    TweenLite.to(tempA, 0.2, {y : tempA.originalY, delay: 0.2})
-                    TweenLite.to(tempB, 0.2, {y : tempB.originalY, delay: 0.2})
-                    TweenLite.to(tempC, 0.2, {y : tempC.originalY, delay: 0.2})
+                    TweenMax.to(tempA, 0.2, {y : tempA.originalY, delay: 0.2})
+                    TweenMax.to(tempB, 0.2, {y : tempB.originalY, delay: 0.2})
+                    TweenMax.to(tempC, 0.2, {y : tempC.originalY, delay: 0.2})
 
                    
                 }
@@ -1027,6 +1258,7 @@ function threeJS_Render()
 	pointLight3.position.y = ( 5 * Math.cos( motionRate3 * 1.65 ) ) + 10;
 	pointLight3.position.z = ( 7 * Math.sin( motionRate3 ) ) - 10;
 
+/*
 	motionRate4 = Date.now() * 0.0002;
 	pointLight4.position.x = ( 2 * Math.cos( motionRate2 * 2 ) ) - 30;
 	pointLight4.position.y = ( 2 * Math.cos( motionRate2 * 1.65 ) ) + 10;
@@ -1036,9 +1268,9 @@ function threeJS_Render()
 	pointLight5.position.x = ( 2 * Math.cos( motionRate3 * 3 ) ) + 15;
 	pointLight5.position.y = ( 2 * Math.cos( motionRate3 * 1.65 ) ) + 12;
 	pointLight5.position.z = ( 1 * Math.sin( motionRate3 ) ) - 0;
-
+*/
 /*
-	lightMesh.position.copy( pointLight4.position );
+	lightMesh.position.copy( directionalLight.position );
 	lightMesh2.position.copy( pointLight5.position );
 	lightMesh3.position.copy( pointLight3.position );
 */
